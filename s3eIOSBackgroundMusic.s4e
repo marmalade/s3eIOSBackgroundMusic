@@ -1,0 +1,757 @@
+#
+# Copyright (C) 2001-2011 Ideaworks3D Ltd.
+# All Rights Reserved.
+#
+# This document is protected by copyright, and contains information
+# proprietary to Ideaworks3D.
+# This file consists of source code released by Ideaworks3D under
+# the terms of the accompanying End User License Agreement (EULA).
+# Please do not use this program/source code before you have read the
+# EULA and have agreed to be bound by its terms.
+#
+no_init_term
+errors
+use_legacy_extavailable
+
+include:
+#include <s3eTypes.h>
+
+/**
+ * @addtogroup s3egroup
+ * @{
+ */
+
+
+/**
+ * @defgroup iosbackgroundmusicapigroup S3E iOS Background Music API Reference
+ *
+ * Background Music provides access to the device's music library through
+ * the Music Picker interface, plus a means to interact with music played
+ * through playback controls and the ability to query track and player status.
+ *
+ * For more information on the functionality provided by this API,
+ * see the "iOS Background Music" section of the S3E API Documentation.
+ *
+ * @supported
+ * - ios
+ *
+ * @{
+ */
+
+/**
+ * Background Music error codes.
+ *
+ * @see s3eIOSBackgroundMusicGetError
+ * @par Required Header Files
+ * s3eIOSBackgroundMusic.h
+ */
+typedef enum s3eIOSBackgroundMusicError
+{
+   #define No Error. */
+    S3E_IOSBACKGROUNDMUSIC_ERR_NONE                        = 0,
+
+    /** Invalid parameter. */
+    S3E_IOSBACKGROUNDMUSIC_ERR_PARAM                       = 1,
+
+    /** Internal device error. */
+    S3E_IOSBACKGROUNDMUSIC_ERR_DEVICE                      = 2,
+
+    /** The user or OS cancelled the operation. */
+    S3E_IOSBACKGROUNDMUSIC_ERR_CANCELLED                   = 1000
+} s3eIOSBackgroundMusicError;
+
+
+/**
+ * @name Background Music Picker Position values
+ *
+ * Positions music picker can place itself in relation to the
+ * position of the button that was pressed to display it.
+ *
+ * These are optionally passed to s3eIOSBackgroundMusicPickMusicItems() as an ORed
+ * mask of values and only take effect on iPad. The picker will position itself
+ * using whichever value in the mask it determines most appropriate given the
+ * screen position of the button. The picker UI originates from an arrow
+ * pointing to one side of the button, also determined automatically. Note that
+ * the direction the UI extends in and the side of the button the origin arrow
+ * points to may differ. e.g. if iOS places the origin below the button but only
+ * S3E_IOSBACKGROUNDMUSIC_POSITION_UP is allowed, the picker will extend upwards
+ * and overlap the button. The default is S3E_IOSBACKGROUNDMUSIC_POSITION_ANY which
+ * should result in the picker never overlapping the button area.
+ * 
+ * @see s3eIOSBackgroundMusicPickMusicItems
+ * @par Required Header Files
+ * s3eIOSBackgroundMusic.h
+ */
+/** @{ */
+
+/** Picker UI extends downwards from its origin, with arrow pointing up */
+#define S3E_IOSBACKGROUNDMUSIC_PICKER_POSITION_DOWN   0x1
+
+/** Picker UI extends upwards from its origin, with arrow pointing down */
+#define S3E_IOSBACKGROUNDMUSIC_PICKER_POSITION_UP     0x2
+
+/** Picker UI extends right from its origin, with arrow pointing left */
+#define S3E_IOSBACKGROUNDMUSIC_PICKER_POSITION_RIGHT  0x4
+
+/** Picker UI extends left from its origin, with arrow pointing right */
+#define S3E_IOSBACKGROUNDMUSIC_PICKER_POSITION_LEFT   0x8
+
+/** Picker extends in best available direction from its origin arrow */ 
+#define S3E_IOSBACKGROUNDMUSIC_PICKER_POSITION_ANY    S3E_IOSBACKGROUNDMUSIC_PICKER_POSITION_UP | S3E_IOSBACKGROUNDMUSIC_PICKER_POSITION_DOWN | S3E_IOSBACKGROUNDMUSIC_PICKER_POSITION_LEFT | S3E_IOSBACKGROUNDMUSIC_PICKER_POSITION_RIGHT
+/** @} */
+
+/**
+ * @struct s3eIOSBackgroundMusicItem
+ * An opaque reference to the underlying music item.
+ *
+ * Refers to a item on the device and the reference will persist no matter
+ * what item information is changed for the duration of the application's
+ * execution. Multiple s3eIOSBackgroundMusicItem instances can exist that refer to
+ * the same item on the device. Items are obtained from collections which are
+ * in turn obtained by querying the library. An item is owned by the collection
+ * from which it was retrieved and is valid until the collection is released.
+ * An item should not be explicitly released.
+ *
+ * Note here on memory and creating own playlists using ints obtained using
+ * S3E_IOSBACKGROUNDMUSICITEM_PERSISTENT_ID
+ *
+ * @see s3eIOSBackgroundMusicItemProperty
+ * @see s3eIOSBackgroundMusicGetCurrentItem
+ * @par Required Header Files
+ * s3eIOSBackgroundMusic.h
+ */
+struct s3eIOSBackgroundMusicItem;
+
+/**
+ * @struct s3eIOSBackgroundMusicCollection
+ * An opaque reference to a list of music items which can be played.
+ *
+ * Obtained either by querying the database using
+ * s3eIOSBackgroundMusicGetCollections or created manually using
+ * s3eIOSBackgroundMusicCreateCollection or s3eIOSBackgroundMusicAppendCollection.
+ *
+ * Collections are managed internally and must be freed using
+ * s3eIOSBackgroundMusicGetReleaseCollection when finished with. Items are only
+ * valid for playback while they are in a valid collection.
+ *
+ * Individual media items can be retrieved from the collection using
+ * s3eIOSBackgroundMusicCollectionGetItems.
+ *
+ * @see s3eIOSBackgroundMusicGetCollections
+ * @see s3eIOSBackgroundMusicCreateCollection
+ * @see s3eIOSBackgroundMusicGetReleaseCollection
+ * @see s3eIOSBackgroundMusicCollectionGetItems
+ * @par Required Header Files
+ * s3eIOSBackgroundMusic.h
+ */
+struct s3eIOSBackgroundMusicCollection;
+
+/**
+ * Enum for S3E_IOSBACKGROUNDMUSIC_PLAYBACK_STATE.
+ * @see s3eIOSBackgroundMusicProperty
+ * @see s3eIOSBackgroundMusicGetInt
+ * @par Required Header Files
+ * s3eIOSBackgroundMusic.h
+ */
+typedef enum s3eIOSBackgroundMusicPlaybackState
+{
+    S3E_IOSBACKGROUNDMUSIC_PLAYBACK_STOPPED,
+    S3E_IOSBACKGROUNDMUSIC_PLAYBACK_PLAYING,
+    S3E_IOSBACKGROUNDMUSIC_PLAYBACK_PAUSED,
+    S3E_IOSBACKGROUNDMUSIC_PLAYBACK_INTERRUPTED,
+    S3E_IOSBACKGROUNDMUSIC_PLAYBACK_SEEKING_FORWARD,
+    S3E_IOSBACKGROUNDMUSIC_PLAYBACK_SEEKING_BACKWARD
+} s3eIOSBackgroundMusicPlaybackState;
+
+
+/**
+ * Enum for S3E_IOSBACKGROUNDMUSIC_PLAYBACK_REPEAT_MODE.
+ * @see s3eIOSBackgroundMusicProperty
+ * @see s3eIOSBackgroundMusicGetInt
+ * @par Required Header Files
+ * s3eIOSBackgroundMusic.h
+ */
+typedef enum s3eIOSBackgroundMusicRepeatMode
+{
+    S3E_IOSBACKGROUNDMUSIC_REPEAT_MODE_DEFAULT,
+    S3E_IOSBACKGROUNDMUSIC_REPEAT_MODE_NONE,
+    S3E_IOSBACKGROUNDMUSIC_REPEAT_MODE_ONE,
+    S3E_IOSBACKGROUNDMUSIC_REPEAT_MODE_ALL,
+} s3eIOSBackgroundMusicRepeatMode;
+
+
+/**
+ * Enum for S3E_IOSBACKGROUNDMUSIC_PLAYBACK_SHUFFLE_MODE.
+ * @see s3eIOSBackgroundMusicProperty
+ * @see s3eIOSBackgroundMusicGetInt
+ * @par Required Header Files
+ * s3eIOSBackgroundMusic.h
+ */
+typedef enum s3eIOSBackgroundMusicShuffleMode
+{
+    S3E_IOSBACKGROUNDMUSIC_SHUFFLE_MODE_DEFAULT,
+    S3E_IOSBACKGROUNDMUSIC_SHUFFLE_MODE_OFF,
+    S3E_IOSBACKGROUNDMUSIC_SHUFFLE_MODE_SONGS,
+    S3E_IOSBACKGROUNDMUSIC_SHUFFLE_MODE_ALBUMS,
+} s3eIOSBackgroundMusicShuffleMode;
+
+
+/**
+ * BackgroundMusic Properties.
+ * @see s3eIOSBackgroundMusicGetInt
+ * @see s3eIOSBackgroundMusicSetInt
+ * @par Required Header Files
+ * s3eIOSBackgroundMusic.h
+ */
+typedef enum s3eIOSBackgroundMusicProperty
+{
+    /**
+     * [read, write, int] The current playback time, in milliseconds, of the now playing item.
+     */
+    S3E_IOSBACKGROUNDMUSIC_CURRENT_PLAYBACK_TIME = 0,
+
+    /**
+     * [read, int] The current playback state.
+     * @see s3eIOSBackgroundMusicPlaybackState
+     */
+    S3E_IOSBACKGROUNDMUSIC_PLAYBACK_STATE        = 1,
+
+    /**
+     * [read, write, int] The current repeat mode of the background music player.
+     * @see s3eIOSBackgroundMusicRepeatMode
+     */
+    S3E_IOSBACKGROUNDMUSIC_PLAYBACK_REPEAT_MODE  = 2,
+
+    /**
+     * [read, write, int] The current shuffle mode of the background music player.
+     * @see s3eIOSBackgroundMusicShuffleMode
+     */
+    S3E_IOSBACKGROUNDMUSIC_PLAYBACK_SHUFFLE_MODE = 3,
+
+    /**
+     * [read, write, int] The current volume of the background music player in the range [0..255].
+     */
+    S3E_IOSBACKGROUNDMUSIC_PLAYBACK_VOLUME       = 4,
+
+    /**
+     * [read, write, int] This boolean is 1 if game audio should mix with BackgroundMusic or 0
+     * if game audio should replace BackgroundMusic.
+     */
+    S3E_IOSBACKGROUNDMUSIC_PLAYBACK_MIX          = 5,
+}s3eIOSBackgroundMusicProperty;
+
+/**
+ * Enum for  S3E_IOSBACKGROUNDMUSICITEM_MEDIA_TYPE.
+ * @see s3eIOSBackgroundMusicItemProperty
+ * @see s3eIOSBackgroundMusicItemGetInt
+ * @par Required Header Files
+ * s3eIOSBackgroundMusic.h
+ */
+typedef enum s3eIOSBackgroundMusicMediaType
+{
+    S3E_IOSBACKGROUNDMUSIC_MEDIA_TYPE_MUSIC        = 1 << 0,
+    S3E_IOSBACKGROUNDMUSIC_MEDIA_TYPE_PODCAST      = 1 << 1,
+    S3E_IOSBACKGROUNDMUSIC_MEDIA_TYPE_AUDIOBOOK    = 1 << 2,
+    S3E_IOSBACKGROUNDMUSIC_MEDIA_TYPE_ANY_AUDIO    = 0x00ff,
+    S3E_IOSBACKGROUNDMUSIC_MEDIA_TYPE_ANY          = ~0,
+} s3eIOSBackgroundMusicMediaType;
+
+
+/**
+ * s3eIOSBackgroundMusicItem Properties.
+ *
+ * On iPhone, none of the property values can be edited through the API,
+ * only read.
+ *
+ * The items properties with _USER in their name are values that a user can
+ * cause to change at any point while an application is running. These are
+ * things like ratings, play count, last played date, etc. Other values will
+ * not change unless the files themselves are edited (e.g. with iTunes).
+ *
+ * Items with _PODCAST are only valid for items of type
+ * S3E_IOSBACKGROUNDMUSIC_MEDIA_TYPE_PODCAST.
+ *
+ * Items labelled as "filter" can be specified as the m_property value for a
+ * s3eIOSBackgroundMusicFilterPredicate used to create a query.
+ *
+ * @see s3eIOSBackgroundMusicItemGetString
+ * @see s3eIOSBackgroundMusicItemGetInt
+ * @par Required Header Files
+ * s3eIOSBackgroundMusic.h
+ */
+typedef enum s3eIOSBackgroundMusicItemProperty
+{
+    /**
+     * [read, string, filter] The persistent identifier for the media item. Value is a 64 bit integer in hex.
+     * TODO: want a way to get this as an int64 - might have unique function int64 s3eIOSBackgroundMusicGetItemUID()
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_PERSISTENT_ID       = 0,
+
+    /**
+     * [read, int, filter] The media type of the music item. Value is a bit field.
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_MEDIA_TYPE          = 1,
+
+    /**
+     * [read, string, filter] The title (or name) of the music item.
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_TITLE               = 2,
+
+    /**
+     * [read, string, filter] The title of the album, as opposed to the title of the track
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_ALBUM_TITLE         = 3,
+
+    /**
+     * [read, string, filter] The performing artist(s) for the music item.
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_ARTIST              = 4,
+
+    /**
+     * [read, string, filter] The primary performing artist for an album as a whole.
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_ALBUM_ARTIST        = 5,
+
+    /**
+     * [read, string, filter] The musical genre of the item.
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_GENRE               = 6,
+
+    /**
+     * [read, string, filter] The musical composer(s) of the item.
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_COMPOSER            = 7,
+
+    /**
+     * [read, int] The playback duration in milliseconds.
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_PLAYBACK_DURATION   = 8,
+
+    /**
+     * [read, int] The track number of the music item, for a music item that is part of an album.
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_ALBUM_TRACK_NUMBER  = 9,
+
+    /**
+     * [read, int] The number of tracks in the album that contains the music item.
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_ALBUM_TRACK_COUNT   = 10,
+
+    /**
+     * [read, int] The disc number of the media item, for a music item that is part of a multi-disc album.
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_DISC_NUMBER         = 11,
+
+    /**
+     * [read, int] The number of discs in the album that contains the music item.
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_DISC_COUNT          = 12,
+
+    /**
+     * [read, string] The lyrics for the song.
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_LYRICS              = 13,
+
+    /**
+     * [read, int, filter] Boolean indicating whether the music item is part of a compilation (S3E_TRUE) or not (S3E_FALSE).
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_IS_COMPILATION      = 14,
+
+    /**
+     * [read, ?]
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_RELEASE_DATE        = 15,
+
+    /**
+     * [read, int] Beats per minute for the track.
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_BEATS_PER_MINUTE = 16,
+
+    /**
+     * [read, string] Comments for the track.
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_COMMENTS = 17,
+
+    /**
+     * [read, string] Information URL for the track.
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_ASSET_URL = 18,
+
+    /**
+     * [read, string] Title for the podcast (as opposed to podcast episode).
+     * Valid for items of type S3E_IOSBACKGROUNDMUSIC_MEDIA_TYPE_PODCAST only.
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_PODCAST_TITLE = 19,
+
+    /**
+     * [read, int] Number of times the user has played the track.
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_USER_PLAY_COUNT = 20,
+
+    /**
+     * [read, int] Number of times the user has skipped the track.
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_USER_SKIP_COUNT = 21,
+
+    /**
+     * [read, int] User rating form 0 to 5.
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_USER_RATING = 22,
+
+    /**
+     * [read, ?] Last tie & date at which the track was played.
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_USER_LAST_PLAYED_DATE = 23,
+
+    /**
+     * [read, string] User specified "grouping" string.
+     */
+    S3E_IOSBACKGROUNDMUSICITEM_USER_GROUPING = 24
+} s3eIOSBackgroundMusicItemProperty;
+
+/**
+ * s3eIOSBackgroundMusicCollectionProperty Properties.
+ *
+ * @see ...
+ * @par Required Header Files
+ * s3eIOSBackgroundMusic.h
+ */
+typedef enum s3eIOSBackgroundMusicCollectionProperty
+{
+    /**
+     * [read, int] The number of items in the collection.
+     */
+    S3E_IOSBACKGROUNDMUSIC_COLLECTION_COUNT          = 0,
+
+    /**
+     * [read, int] The types of media included in the collection.
+     * This will be the AND value of the s3eIOSBackgroundMusicMediaType values for
+     * all items in the collection.
+     */
+    S3E_IOSBACKGROUNDMUSIC_COLLECTION_MEDIA_TYPES     = 1,
+
+    /**
+     * [read, int] The grouping type the collection was created with
+     * Will be one of s3eIOSBackgroundMusicGroupingType. If a collection was
+     * created with s3eIOSBackgroundMusicCreateCollection() or
+     * s3eIOSBackgroundMusicAppendCollection(), the type will be
+     * S3E_IOSBACKGROUNDMUSIC_GROUPING_NONE.
+     */
+    S3E_IOSBACKGROUNDMUSIC_COLLECTION_GROUPING_TYPE  = 2,
+} s3eIOSBackgroundMusicCollectionProperty;
+
+/**
+ * Comparison types for use with s3eIOSBackgroundMusicFilterPredicate.
+ * Specifies how to compare the string in the predicate with the item's string.
+ *
+ * @see ...
+ * @par Required Header Files
+ * s3eIOSBackgroundMusic.h
+ */
+typedef enum s3eIOSBackgroundMusicComparisonType
+{
+    S3E_IOSBACKGROUNDMUSIC_COMPARISON_EQUAL_TO,
+    S3E_IOSBACKGROUNDMUSIC_COMPARISON_CONTAINS
+} s3eIOSBackgroundMusicComparisonType;
+
+
+/**
+ * Background Music filter predicate.
+ *
+ * A predicate specifying a property and value, which used to construct a query
+ * for finding collections of items based on common values. When querying items,
+ * an array of predicates is specified and a collection of items is returned
+ * containing only the items for which all properties specified match the values
+ * specified. Properties are only valid if labelled as "filter" in the
+ * s3eIOSBackgroundMusicItemProperty reference.
+ *
+ * @see
+ * @par Required Header Files
+ * s3eIOSBackgroundMusic.h
+ */
+typedef struct s3eIOSBackgroundMusicFilterPredicate
+{
+    /**
+     * Property to filter items by.
+     */
+    s3eIOSBackgroundMusicItemProperty   m_property;
+
+    /**
+     * Value the property for an item must equal in order to be added to the
+     * collection.
+     */
+    void*                            m_value;
+
+    /**
+     * How to perform the comparison.
+     */
+    s3eIOSBackgroundMusicComparisonType m_comparisonType;
+} s3eIOSBackgroundMusicFilterPredicate;
+
+/**
+ * Background Music grouping types.
+ *
+ * Collections of items can be created by passing a grouping type to the
+ * s3eIOSBackgroundMusicGetCollections() query function. This returns an array of
+ * collections, each collection being grouped by the value specified here.
+ * For example, S3E_IOSBACKGROUNDMUSIC_GROUPING_ALBUM will return a set of
+ * collections where the items in a collection are all from the same album.
+ *
+ * @see
+ * @par Required Header Files
+ * s3eIOSBackgroundMusic.h
+ */
+typedef enum s3eIOSBackgroundMusicGroupingType
+{
+    S3E_IOSBACKGROUNDMUSIC_GROUPING_NONE,
+    S3E_IOSBACKGROUNDMUSIC_GROUPING_TITLE,
+    S3E_IOSBACKGROUNDMUSIC_GROUPING_ALBUM,
+    S3E_IOSBACKGROUNDMUSIC_GROUPING_ARTIST,
+    S3E_IOSBACKGROUNDMUSIC_GROUPING_ALBUM_ARTIST,
+    S3E_IOSBACKGROUNDMUSIC_GROUPING_COMPOSER,
+    S3E_IOSBACKGROUNDMUSIC_GROUPING_GENRE,
+    S3E_IOSBACKGROUNDMUSIC_GROUPING_PLAYLIST,
+    S3E_IOSBACKGROUNDMUSIC_GROUPING_PODCAST_TITLE
+    //S3E_IOSBACKGROUNDMUSIC_GROUPING_SERIES_NAME in iphone docs but does not exist!
+} s3eIOSBackgroundMusicGroupingType;
+
+// TODO: Callbacks for media state change.
+
+functions:
+
+/**
+ * Attempts to launch an interface for selecting music item(s) to play.
+ * 
+ * On an iPhone/iPod this launches the standard iPod GUI.
+ *
+ * On iPod/iPhone this is a full screen UI. On iPad, the picker is displayed in
+ * a small "pop-over" window with an arrow pointing to the button that was
+ * pressed to open it. Values describing your on-screen button (buttonX,
+ * buttonY, buttonWidth, buttonHeight) and the position of the picker relative
+ * to it (desiredPosition) should therefore be given if deploying to iPad.
+ * The default values place the popover in the center of the screen with
+ * origin arrow pointing down. NB: an app may be rejected during the App Store
+ * submission process if the pop-over doesn't point to a real on-screen button.
+ * 
+ * @param allowMultipleItems  Allow user to queue up multiple music items.
+ * @param buttonX       Top left X position of the button that invoked the
+ *                      picker (for iPad)
+ * @param buttonY       Top left Y position of the button that invoked the
+ *                      picker (for iPad)
+ * @param buttonWidth   Height of the button that invoked the picker (for iPad)
+ * @param buttonHeight  Height of the button that invoked the picker (for iPad)
+ * @param desiredPosition  A mask of Background Music Picker Position values,
+ *                         specifying desired position relative to invoking
+ *                         button (for iPad).
+ * @param canBeDismissed   If true, touching away from the picker (iPad only)
+ *                         will mismiss it and cancel any selected tracks.
+ * @return
+ * - @ref S3E_RESULT_SUCCESS if no error occurred and music was selected.
+ * - @ref S3E_RESULT_ERROR   if an error occurred or selection was cancelled \n
+ *   Call s3eDeviceGetError() to retrieve an error code.
+ *   This will return:
+ *   - @ref S3E_IOSBACKGROUNDMUSIC_ERR_PARAM if button/UI position is invalid
+ *   - @ref S3E_IOSBACKGROUNDMUSIC_ERR_CANCELLED if the user cancelled selection
+ * @see Background Music Picker Position values
+ * @par Required Header Files
+ * s3eIOSBackgroundMusic.h
+ */
+s3eResult s3eIOSBackgroundMusicPickMusicItems(s3eBool allowMultipleItems, int buttonX S3E_DEFAULT(-1), int buttonY S3E_DEFAULT(-1), uint buttonWidth S3E_DEFAULT(20), uint buttonHeight S3E_DEFAULT(20), int desiredPosition S3E_DEFAULT(S3E_IOSBACKGROUNDMUSIC_PICKER_POSITION_ANY), s3eBool canBeDismissed S3E_DEFAULT(S3E_TRUE)) S3E_RESULT_ERROR
+
+/**
+ * Sets an integer property for the Background Music module.
+ * @param property property to set.
+ * @param value New value for property.
+ * @return
+ * - @ref S3E_RESULT_SUCCESS if no error occurred.
+ * - @ref S3E_RESULT_ERROR if the operation failed.\n
+ *         Call s3eDeviceGetError() to retrieve an error code.
+ *         This will return:
+ *   - @ref S3E_FILE_ERR_PARAM if @e session is invalid or @e property is invalid or @e value is invalid.
+ * @see s3eIOSBackgroundMusicProperty
+ * @see s3eIOSBackgroundMusicGetInt
+ *
+ * @par Required Header Files
+ * s3eIOSBackgroundMusic.h
+ */
+s3eResult s3eIOSBackgroundMusicSetInt(s3eIOSBackgroundMusicProperty property, int32 value) S3E_RESULT_ERROR
+
+
+/**
+ * Retrieves an integer property for the Background Music module.
+ * @param property property to get.
+ * @return
+ *  - The value of the requested property if property is valid.
+ *  - -1 if the property is not valid.\n
+ *    Call @ref s3eAudioGetError() to retrieve an error code. This will return:\n
+ *    @ref S3E_DEVICE_ERR_PARAM if @e property is not valid.
+ * @see s3eIOSBackgroundMusicProperty
+ * @see s3eIOSBackgroundMusicSetInt
+ *
+ * @par Required Header Files
+ * s3eIOSBackgroundMusic.h
+ */
+int32 s3eIOSBackgroundMusicGetInt(s3eIOSBackgroundMusicProperty property) -1
+
+/**
+ * Returns the current s3eIOSBackgroundMusicItem if there is one.
+ * Note paused, interrupted or stopped items DO NOT return NULL.
+ *
+ * The item pointed to is immutable. To change the item currently playing
+ * use s3eIOSBackgroundMusicSetPlaybackQueueWithCollection(). It is not possible
+ * to query the content of the current playlist beyond the item that is
+ * currently playing, however this can be managed manually in an application
+ * by keeping track of what items are queued and which playback controls are
+ * called.
+ */
+struct s3eIOSBackgroundMusicItem* s3eIOSBackgroundMusicGetCurrentItem() NULL
+
+/**
+ * Plays media items from the current playback queue, resuming paused playback if possible.
+ */
+s3eResult s3eIOSBackgroundMusicPlay() S3E_RESULT_ERROR
+
+/**
+ * Pauses any current background Music playback.
+ */
+s3eResult s3eIOSBackgroundMusicPause() S3E_RESULT_ERROR
+
+/**
+ * Stops any current background Music playback.
+ */
+s3eResult s3eIOSBackgroundMusicStop() S3E_RESULT_ERROR
+
+/**
+ * Starts moving the playback point forwards faster than the normal playback rate.
+ */
+s3eResult s3eIOSBackgroundMusicBeginSeekingForward() S3E_RESULT_ERROR
+
+/**
+ * Starts moving the playback point backwards faster than the normal playback rate.
+ */
+s3eResult s3eIOSBackgroundMusicBeginSeekingBackward() S3E_RESULT_ERROR
+
+/**
+ * Stops additional movement of the playback point, returning the playback state to what it was prior to seeking.
+ */
+s3eResult s3eIOSBackgroundMusicEndSeeking() S3E_RESULT_ERROR
+
+/**
+ * Starts playback of the next music item in the playback queue..
+ */
+s3eResult s3eIOSBackgroundMusicSkipToNextItem() S3E_RESULT_ERROR
+
+/**
+ * Restarts playback at the beginning of the currently playing music item.
+ */
+s3eResult s3eIOSBackgroundMusicSkipToBeginning() S3E_RESULT_ERROR
+
+/**
+ * Starts playback of the previous music item in the playback queue.
+ */
+s3eResult s3eIOSBackgroundMusicSkipToPreviousItem() S3E_RESULT_ERROR
+
+/**
+ * Retrieves a string property for the Background Music Item.
+ * @param item the s3eIOSBackgroundMusicItem we're querying.
+ * @param property property to get.
+ * @return
+ *  - A NULL-terminated property string of length >= 1 if the operation succeeded.
+ *  - The empty string ("") if the operation failed.\n
+ *    Call s3eDeviceGetError() to retrieve an error code. This will return:
+ *    @ref S3E_DEVICE_ERR_PARAM if @e property is invalid.
+ * @see s3eIOSBackgroundMusicItemProperty
+ *
+ * @par Required Header Files
+ * s3eIOSBackgroundMusic.h
+ */
+const char* s3eIOSBackgroundMusicItemGetString(struct s3eIOSBackgroundMusicItem* item, s3eIOSBackgroundMusicItemProperty property) NULL
+
+/**
+ * Retrieves an integer property for the Background Music Item.
+ * @param item the s3eIOSBackgroundMusicItem we're querying.
+ * @param property property to get.
+ * @return
+ *  - The value of the requested property if property is valid.
+ *    -1 if the property is not valid.\n
+ *    Call @ref s3eAudioGetError() to retrieve an error code. This will return:\n
+ *    @ref S3E_DEVICE_ERR_PARAM if @e property is not valid.
+ * @see s3eIOSBackgroundMusicProperty
+ *
+ * @par Required Header Files
+ * s3eIOSBackgroundMusic.h
+ */
+int32 s3eIOSBackgroundMusicItemGetInt(struct s3eIOSBackgroundMusicItem* item, s3eIOSBackgroundMusicProperty property) -1
+
+/**
+ * Retrieves one or more collections of items, selected by a filter specified
+ * by one or more music property predicates.
+ *
+ * A single collection is returned if the grouping type is
+ * S3E_IOSBACKGROUNDMUSIC_GROUPING_NONE, otherwise multiple collections are
+ * returned, each containing a different set of items as specified by the
+ * grouping. For example, use S3E_IOSBACKGROUNDMUSIC_GROUPING_ALBUM to return
+ * a collection for each album.
+ *
+ * @return The number of collections returned.
+ *  - The value of the requested property if property is valid.
+ *    -1 if the property is not valid.\n
+ *    Call @ref s3eIOSBackgroundMusicGetError() to retrieve an error code.
+ *    This will return:
+ *    @ref S3E_IOSBACKGROUNDMUSIC_ERR_PARAM if @e property is not valid.
+ *    @ref S3E_IOSBACKGROUNDMUSIC_ERR_MEMORY if not enough memory to allocate
+ *    collections.
+ * @see s3eIOSBackgroundMusicProperty
+ *
+ * @par Required Header Files
+ * s3eIOSBackgroundMusic.h
+ */
+int32 s3eIOSBackgroundMusicGetCollections(struct s3eIOSBackgroundMusicCollection** collections, int32 maxCollections, s3eIOSBackgroundMusicGroupingType groupingType, struct s3eIOSBackgroundMusicFilterPredicate** musicPropertyFilter, int numPredicates) -1
+
+/**
+ * Release a collection when no longer required.
+ * What does this do if the collection is currently playing? Do we want to have
+ * an internal now playing collection (could be freed by passing null to
+ * SetPlaybackQueue)?
+ */
+void s3eIOSBackgroundMusicReleaseCollection(struct s3eIOSBackgroundMusicCollection* collection)
+
+/**
+ * Get a property for a collection.
+ */
+int32 s3eIOSBackgroundMusicCollectionGetInt(struct s3eIOSBackgroundMusicCollection* collection, s3eIOSBackgroundMusicCollectionProperty property) -1
+
+/**
+ * Get a list of items in a collection.
+ * Returns -1 if an error occurred (param/outofmemory)
+ */
+int32 s3eIOSBackgroundMusicCollectionGetItems(struct s3eIOSBackgroundMusicCollection* collection, struct s3eIOSBackgroundMusicItem** items, int32 maxItems) -1
+
+/**
+ * Stitch two collections together and return a new one.
+ */
+struct s3eIOSBackgroundMusicCollection* s3eIOSBackgroundMusicAppendCollection(struct s3eIOSBackgroundMusicCollection* firstCollection, struct s3eIOSBackgroundMusicCollection* secondCollection) NULL
+
+/**
+ * Create custom playlist from items. TODO: prob want an s3eIOSBackgroundMusicItem
+ * and a plain int64 version of these. Item version will be faster as you have to
+ * have the items in a collection already (so are searched for and valid). Int
+ * version allows the app to just store ints and create playlist from scratch -
+ * will be slow as has to do one-at-a-time search for each track internally and
+ * a search can fail if an ID is invalid (maybe return list of invalid IDs?).
+ */
+s3eResult s3eIOSBackgroundMusicCreateCollection(struct s3eIOSBackgroundMusicItem** items, int itemCount) S3E_RESULT_ERROR
+
+/**
+ * Set current playback queue. Optionally append to existing.
+ */
+s3eResult s3eIOSBackgroundMusicSetPlaybackQueueWithCollection(struct s3eIOSBackgroundMusicCollection* collection, s3eBool appendToExisting) S3E_RESULT_ERROR
+
+/**
+ * Releases all allocated collections and stops current playback.
+ */
+void s3eIOSBackgroundMusicTerminate()
+
+append:
+/**@}*/
+/**@}*/

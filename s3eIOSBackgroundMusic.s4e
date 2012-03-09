@@ -34,7 +34,11 @@ include:
  *
  * @supported
  * - ios
- *
+ */
+ 
+/**
+ * @}
+ * @addtogroup iosbackgroundmusicapigroup
  * @{
  */
 
@@ -753,5 +757,4 @@ s3eResult s3eIOSBackgroundMusicSetPlaybackQueueWithCollection(struct s3eIOSBackg
 void s3eIOSBackgroundMusicTerminate()
 
 append:
-/**@}*/
-/**@}*/
+/** @} */

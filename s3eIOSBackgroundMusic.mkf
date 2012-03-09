@@ -1,13 +1,7 @@
-# Subproject file for Airplay extension s3eIOSBackgroundMusic.
+# Subproject file for extension s3eIOSBackgroundMusic.
 #
 # Include this subproject in your App to enable access to the s3eIOSBackgroundMusic API
 #
-# NOTE: This file was origianlly written by the extension builder, but will not
-# be overwritten (unless --force is specified) and is intended to be modified.
-#
-# Running the extension builder with --platform can cause additions to this file
-# even after modification, to support additional platforms
-
 display_name "Extensions/s3eIOSBackgroundMusic"
 
 includepath h
@@ -23,7 +17,10 @@ files
     s3eIOSBackgroundMusic.defines.txt
 }
 
-define IW_TRACE_CHANNEL_BACKGROUNDMUSIC_VERBOSE=2
+defines
+{
+    IW_TRACE_CHANNEL_IOSBACKGROUNDMUSIC_VERBOSE=2
+}
 
 if {{ not defined IW_MKF_IWCRT}}
     subproject iwutil
@@ -32,6 +29,6 @@ if {{ not defined IW_MKF_IWCRT}}
 #lines will cause the extension builder to re-output this section.
 deployments
 {
-    iphone-link-libs="s3eIOSBackgroundMusic "
+    iphone-link-libs=s3eIOSBackgroundMusic
     iphone-link-libdirs=lib/iphone
 }

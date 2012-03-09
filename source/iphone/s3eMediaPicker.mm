@@ -14,7 +14,6 @@
 #include "s3eEdk_iphone.h"
 #include "s3eSurface.h"
 #include "IwDebug.h"
-#include <unistd.h>
 #include "s3eIOSBackgroundMusic_internal.h"
 #include "s3eIOSBackgroundMusic_autodefs.h"
 #import <MediaPlayer/MPMusicPlayerController.h>
@@ -278,7 +277,7 @@ s3eResult _s3eLaunchIPodApp(s3eBool allowMultipleItems, int buttonX, int buttonY
     s3eEdkThreadSetSuspended(); //Indicate that we're blocked
     
     while (g_IPodPickerStatus == IPOD_STATUS_RUNNING && !s3eEdkIsTerminating())
-        usleep(10000);
+        s3eDeviceYield(100);
 
     s3eEdkThreadSetResumed();
     
